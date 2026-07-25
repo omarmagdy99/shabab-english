@@ -11,9 +11,10 @@ import { waLink, isValidPhone, normPhone } from '../normalize.js';
 import { openImport } from './import.js';
 import { downloadSampleTemplate } from '../importer.js';
 
-const selected = new Set();
+let selected = new Set();
 let lastRows = [];
 let onAfterMutate = () => {};
+let viewMode = localStorage.getItem('students_view_mode') || (window.innerWidth < 576 ? 'card' : 'table');
 
 export function initStudents({ afterMutate }) {
   onAfterMutate = afterMutate;
@@ -22,6 +23,7 @@ export function initStudents({ afterMutate }) {
   $('#btn-filter').addEventListener('click', openFilterSheet);
   $('#btn-columns').addEventListener('click', openColumnsSheet);
   $('#btn-sort').addEventListener('click', openSortSheet);
+  $('#btn-view-mode')?.addEventListener('click', toggleViewMode);
   $('#btn-add-student').addEventListener('click', () => openStudentForm(null));
   $('#btn-download-template')?.addEventListener('click', downloadSampleTemplate);
   $('#btn-import').addEventListener('click', () => $('#file-import').click());
@@ -42,7 +44,13 @@ export function initStudents({ afterMutate }) {
   $('#btn-bulk-delete').addEventListener('click', doBulkDelete);
 }
 
-/* ------------------------------ الجدول ------------------------------ */
+function toggleViewMode() {
+  viewMode = viewMode === 'table' ? 'card' : 'table';
+  localStorage.setItem('students_view_mode', viewMode);
+  render();
+}
+
+/* ------------------------------ الجدول والعرض ------------------------------ */
 
 export function render() {
   const { students } = getState();
@@ -61,9 +69,32 @@ export function render() {
   $('#sort-label').textContent = s0 ? fieldByKey(STUDENT_FIELDS, s0.field)?.label || '—' : '—';
   $('#students-count').textContent = `عرض ${rows.length} من ${students.length} طالب`;
 
-  const cols = visibleColumns();
-  renderHead(cols);
-  renderBody(rows, cols);
+  const isCard = viewMode === 'card';
+  const modeBtn = $('#btn-view-mode');
+  if (modeBtn) {
+    const modeLabel = $('#view-mode-label');
+    const modeIcon = $('#view-mode-icon');
+    if (modeLabel) modeLabel.textContent = isCard ? 'جدول' : 'بطاقات';
+    if (modeIcon) modeIcon.className = isCard ? 'bi bi-table' : 'bi bi-card-list';
+  }
+
+  const tableCard = $('#students-table-card');
+  const cardsContainer = $('#students-cards');
+
+  if (isCard) {
+    if (tableCard) tableCard.classList.add('d-none');
+    if (cardsContainer) {
+      cardsContainer.classList.remove('d-none');
+      renderCards(rows);
+    }
+  } else {
+    if (cardsContainer) cardsContainer.classList.add('d-none');
+    if (tableCard) tableCard.classList.remove('d-none');
+    const cols = visibleColumns();
+    renderHead(cols);
+    renderBody(rows, cols);
+  }
+
   renderBulkBar();
 }
 
@@ -159,6 +190,84 @@ function renderBody(rows, cols) {
     frag.append(tr);
   }
   tbody.append(frag);
+}
+
+/* ----------------------- عرض البطاقات للجوال ----------------------- */
+
+function renderCards(rows) {
+  const container = $('#students-cards');
+  if (!container) return;
+  container.replaceChildren();
+
+  if (!rows.length) {
+    const { students } = getState();
+    container.append(emptyState(
+      students.length
+        ? { icon: 'bi-funnel', title: 'لا نتائج مطابقة', text: 'جرّب تعديل التصفية أو البحث.',
+            actionLabel: 'مسح التصفية', onAction: () => setQuery({ filters: [], search: '' }) }
+        : { icon: 'bi-people', title: 'لا يوجد طلاب بعد', text: 'ابدأ بتسجيل أول طالب أو استورد ملف إكسيل.',
+            actionLabel: 'تسجيل طالب', onAction: () => openStudentForm(null) }
+    ));
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const row of rows) {
+    const isSelected = selected.has(row.id);
+    const card = el('div', `card border-0 shadow-sm p-3 mb-2 transition-all ${isSelected ? 'border-start border-4 border-primary bg-primary-subtle' : ''}`);
+
+    const top = el('div', 'd-flex align-items-center justify-content-between mb-2 gap-2');
+    
+    const nameWrap = el('div', 'd-flex align-items-center gap-2 overflow-hidden');
+    const chk = el('input', 'form-check-input flex-shrink-0');
+    chk.type = 'checkbox';
+    chk.checked = isSelected;
+    chk.addEventListener('change', () => {
+      chk.checked ? selected.add(row.id) : selected.delete(row.id);
+      render();
+    });
+
+    const name = el('h6', 'fw-bold mb-0 text-truncate', esc(row.name));
+    nameWrap.append(chk, name);
+
+    const acts = el('div', 'd-flex align-items-center gap-1 flex-shrink-0');
+    acts.append(
+      iconBtn('bi-pencil-square', 'btn-outline-primary', 'تعديل', () => openStudentForm(row)),
+      iconBtn('bi-whatsapp', 'btn-outline-success', 'واتساب', () => window.open(waLink(row.phone), '_blank', 'noopener')),
+      iconBtn('bi-trash', 'btn-outline-danger', 'حذف', () => doDelete(row)),
+    );
+    top.append(nameWrap, acts);
+
+    const meta = el('div', 'd-flex flex-wrap gap-2 align-items-center text-muted small mt-2 pt-2 border-top border-translucent');
+
+    if (row.phone) {
+      const pSpan = el('span', 'font-monospace text-dark d-flex align-items-center gap-1 me-1');
+      pSpan.dir = 'ltr';
+      pSpan.innerHTML = `<i class="bi bi-telephone-fill text-muted"></i> ${esc(row.phone)}`;
+      meta.append(pSpan);
+    }
+
+    if (row.level) {
+      meta.append(el('span', 'badge rounded-pill text-bg-primary-subtle text-primary-emphasis', `المستوى: ${esc(row.level)}`));
+    }
+
+    if (row.mentor) {
+      meta.append(el('span', 'badge rounded-pill text-bg-secondary-subtle text-secondary-emphasis', `المعلم: ${esc(row.mentor)}`));
+    }
+
+    if (row.uni_status) {
+      meta.append(el('span', 'badge rounded-pill text-bg-info-subtle text-info-emphasis', esc(row.uni_status)));
+    }
+
+    if (row.enrolled === 'نعم') {
+      meta.append(el('span', 'badge rounded-pill text-bg-success-subtle text-success-emphasis', `معهد: ${esc(row.year || 'مسجل')}`));
+    }
+
+    card.append(top, meta);
+    frag.append(card);
+  }
+
+  container.append(frag);
 }
 
 function iconBtn(icon, variant, title, onClick) {

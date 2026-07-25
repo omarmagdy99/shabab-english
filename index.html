@@ -124,6 +124,11 @@
                   <span>الترتيب:</span>
                   <span id="sort-label" class="fw-semibold">المستوى</span>
                 </button>
+
+                <button type="button" id="btn-view-mode" class="btn btn-pill btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0" title="تبديل طريقة العرض (جدول / بطاقات)">
+                  <i id="view-mode-icon" class="bi bi-card-list"></i>
+                  <span id="view-mode-label" class="fw-semibold">بطاقات</span>
+                </button>
               </div>
             </div>
           </div>
@@ -134,7 +139,7 @@
           </div>
 
           <!-- Table Container -->
-          <div class="card border-0 shadow-sm overflow-hidden mb-5">
+          <div id="students-table-card" class="card border-0 shadow-sm overflow-hidden mb-5">
             <div class="table-responsive custom-table-wrapper">
               <table id="students-table" class="table table-hover align-middle mb-0 text-nowrap rtl-sticky-table">
                 <thead id="students-thead" class="table-light">
@@ -169,6 +174,9 @@
               </table>
             </div>
           </div>
+
+          <!-- Cards View Container (Mobile Friendly) -->
+          <div id="students-cards" class="students-cards-container d-none mb-5 pb-4"></div>
 
           <!-- FAB: Floating Action Button -->
           <button type="button" id="btn-add-student" class="btn btn-primary rounded-pill shadow-lg fab-btn d-flex align-items-center gap-2 px-3 py-2" aria-label="تسجيل طالب جديد">
