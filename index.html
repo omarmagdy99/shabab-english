@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>شباب إنجلش - نظام إدارة الطلاب</title>
+  <!-- Bootstrap 5.3 RTL -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Custom Design System & Components -->
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- GATE / PASSCODE SCREEN                     -->
+  <!-- ========================================== -->
+  <div id="gate" class="gate-screen d-flex align-items-center justify-content-center">
+    <div class="card gate-card border-0 shadow-lg p-4 p-md-5 text-center">
+      <div class="gate-icon-wrapper mb-3 mx-auto">
+        <i class="bi bi-shield-lock-fill text-primary display-4"></i>
+      </div>
+      <h1 class="h3 fw-bold mb-1">شباب إنجلش</h1>
+      <p class="text-muted small mb-4">نظام إدارة ومتابعة دورة اللغة الإنجليزية</p>
+      
+      <form id="gate-form" novalidate autocomplete="off">
+        <div class="mb-3">
+          <label for="gate-pass" class="form-label fw-semibold visually-hidden">الرمز السري</label>
+          <input type="password" id="gate-pass" class="form-control form-control-lg text-center letter-spacing-lg fs-4" placeholder="أدخل رمز الدخول" inputmode="numeric" required autofocus>
+        </div>
+        <div id="gate-error" class="alert alert-danger d-none py-2 px-3 small mb-3 text-center" role="alert"></div>
+        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+          <span>دخول للنظام</span>
+          <i class="bi bi-arrow-left"></i>
+        </button>
+      </form>
+      <div class="mt-4 pt-3 border-top text-muted fs-7">
+        خاص بطاقم الإشراف والمتابعة فقط
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MAIN APP SHELL                             -->
+  <!-- ========================================== -->
+  <!-- Screen visibility rule: The JS toggles the class 'd-none' on screen sections (#screen-students, #screen-teachers, #screen-messages, #screen-history). Exactly one section is active and visible at a time. -->
+  <div id="app" class="app-shell d-none min-vh-100 d-flex flex-column">
+    
+    <!-- Top App Bar -->
+    <header class="app-header sticky-top border-bottom">
+      <div class="container-fluid max-w-xl d-flex align-items-center justify-content-between py-2 px-3">
+        <div class="d-flex align-items-center gap-2">
+          <div class="brand-badge bg-primary text-white rounded-3 d-flex align-items-center justify-content-center">
+            <i class="bi bi-book-half"></i>
+          </div>
+          <div>
+            <h2 class="h6 fw-bold mb-0 lh-1">شباب إنجلش</h2>
+            <div id="sync-status" class="sync-status-badge text-muted fs-8 d-flex align-items-center gap-1 mt-1">
+              <span class="status-dot status-online"></span>
+              <span class="status-text">متصل</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex align-items-center gap-1">
+          <button type="button" id="btn-refresh" class="btn btn-icon btn-light border-0 rounded-circle" title="تحديث البيانات" aria-label="تحديث البيانات">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button type="button" id="btn-lock" class="btn btn-icon btn-light border-0 rounded-circle text-danger" title="قفل / خروج" aria-label="قفل">
+            <i class="bi bi-lock-fill"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Screens Container -->
+    <main class="app-main flex-grow-1">
+      <div class="container-fluid max-w-xl py-3 px-2 px-sm-3">
+        
+        <!-- -------------------------------------- -->
+        <!-- SCREEN 1: STUDENTS (الطلاب)           -->
+        <!-- -------------------------------------- -->
+        <section id="screen-students" class="app-screen">
+          <!-- Controls Bar -->
+          <div class="controls-bar card border-0 shadow-sm p-2 p-sm-3 mb-3 sticky-controls">
+            <div class="row g-2">
+              <div class="col-12">
+                <div class="input-group">
+                  <span class="input-group-text bg-transparent border-end-0 text-muted px-2">
+                    <i class="bi bi-search"></i>
+                  </span>
+                  <input type="search" id="students-search" class="form-control border-start-0 ps-0" placeholder="بحث بالاسم أو رقم الهاتف...">
+                  <button type="button" id="btn-download-template" class="btn btn-outline-success d-flex align-items-center gap-1 px-2 px-sm-3" title="تحميل نموذج إكسيل جاهز لتعبئته واسباب الاستيراد">
+                    <i class="bi bi-file-earmark-arrow-down-fill text-success"></i>
+                    <span class="d-none d-sm-inline">تنزيل نموذج</span>
+                  </button>
+                  <button type="button" id="btn-import" class="btn btn-outline-secondary d-flex align-items-center gap-1 px-2 px-sm-3" title="استيراد من إكسيل">
+                    <i class="bi bi-file-earmark-excel-fill text-success"></i>
+                    <span class="d-none d-sm-inline">استيراد</span>
+                  </button>
+                  <input type="file" id="file-import" accept=".xlsx,.xls,.csv" class="d-none">
+                </div>
+              </div>
+              <div class="col-12 d-flex align-items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button type="button" id="btn-filter" class="btn btn-pill btn-outline-primary d-flex align-items-center gap-1 flex-shrink-0">
+                  <i class="bi bi-funnel"></i>
+                  <span>تصفية</span>
+                  <span id="filter-count" class="badge rounded-pill bg-primary ms-1">0</span>
+                </button>
+
+                <button type="button" id="btn-columns" class="btn btn-pill btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0">
+                  <i class="bi bi-layout-three-columns"></i>
+                  <span>الأعمدة</span>
+                  <span id="columns-count" class="badge rounded-pill bg-secondary ms-1">0</span>
+                </button>
+
+                <button type="button" id="btn-sort" class="btn btn-pill btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0">
+                  <i class="bi bi-arrow-down-up"></i>
+                  <span>الترتيب:</span>
+                  <span id="sort-label" class="fw-semibold">المستوى</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Counter Line -->
+          <div class="d-flex justify-content-between align-items-center px-1 mb-2">
+            <span id="students-count" class="text-muted small fw-semibold">عرض 0 من 0 طالب</span>
+          </div>
+
+          <!-- Table Container -->
+          <div class="card border-0 shadow-sm overflow-hidden mb-5">
+            <div class="table-responsive custom-table-wrapper">
+              <table id="students-table" class="table table-hover align-middle mb-0 text-nowrap rtl-sticky-table">
+                <thead id="students-thead" class="table-light">
+                  <tr>
+                    <th scope="col" class="col-sticky-check text-center" style="width: 44px;">
+                      <input type="checkbox" id="chk-all" class="form-check-input">
+                    </th>
+                    <th scope="col" class="col-sticky-name">الاسم</th>
+                    <th scope="col">الهاتف</th>
+                    <th scope="col">المستوى</th>
+                    <th scope="col">المعلم المتابع</th>
+                    <th scope="col">الحالة الجامعية</th>
+                    <th scope="col">مسجل بالمعهد</th>
+                    <th scope="col">السنة</th>
+                    <th scope="col" class="text-center">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="students-tbody">
+                  <!-- Skeleton Loading State by Default -->
+                  <tr class="skeleton-row">
+                    <td class="col-sticky-check text-center"><div class="skeleton-box sm"></div></td>
+                    <td class="col-sticky-name"><div class="skeleton-box lg"></div></td>
+                    <td><div class="skeleton-box md"></div></td>
+                    <td><div class="skeleton-box sm"></div></td>
+                    <td><div class="skeleton-box md"></div></td>
+                    <td><div class="skeleton-box sm"></div></td>
+                    <td><div class="skeleton-box sm"></div></td>
+                    <td><div class="skeleton-box sm"></div></td>
+                    <td class="text-center"><div class="skeleton-box sm mx-auto"></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- FAB: Floating Action Button -->
+          <button type="button" id="btn-add-student" class="btn btn-primary rounded-pill shadow-lg fab-btn d-flex align-items-center gap-2 px-3 py-2" aria-label="تسجيل طالب جديد">
+            <i class="bi bi-person-plus-fill fs-5"></i>
+            <span class="fw-bold fs-6">تسجيل طالب</span>
+          </button>
+
+          <!-- Bulk Action Bar -->
+          <div id="bulk-bar" class="bulk-bar border-top shadow-lg p-2 p-sm-3 d-flex align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary fs-6 px-3 py-2" id="bulk-count">تم تحديد 0</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" id="btn-bulk-edit" class="btn btn-light btn-sm fw-bold border d-flex align-items-center gap-1">
+                <i class="bi bi-pencil-square text-primary"></i>
+                <span>تعديل جماعي</span>
+              </button>
+              <button type="button" id="btn-bulk-delete" class="btn btn-danger btn-sm fw-bold d-flex align-items-center gap-1">
+                <i class="bi bi-trash-fill"></i>
+                <span>حذف</span>
+              </button>
+              <button type="button" id="btn-bulk-cancel" class="btn btn-close-custom btn-sm" aria-label="إلغاء التحديد">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- -------------------------------------- -->
+        <!-- SCREEN 2: TEACHERS (المعلمون)         -->
+        <!-- -------------------------------------- -->
+        <section id="screen-teachers" class="app-screen d-none">
+          <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+            <div>
+              <h3 class="h5 fw-bold mb-0">قائمة المعلمين والمنسقين</h3>
+              <span id="teachers-count" class="text-muted small">عرض 0 معلم</span>
+            </div>
+            <button type="button" id="btn-add-teacher" class="btn btn-primary btn-sm rounded-pill d-flex align-items-center gap-1 px-3 py-2">
+              <i class="bi bi-plus-circle-fill"></i>
+              <span>إضافة معلم</span>
+            </button>
+          </div>
+
+          <div class="card border-0 shadow-sm overflow-hidden mb-4">
+            <div class="table-responsive custom-table-wrapper">
+              <table id="teachers-table" class="table table-hover align-middle mb-0 text-nowrap rtl-sticky-table">
+                <thead id="teachers-thead" class="table-light">
+                  <tr>
+                    <th scope="col" class="col-sticky-name">الاسم</th>
+                    <th scope="col">الهاتف</th>
+                    <th scope="col">المصدر</th>
+                    <th scope="col">عدد المتابعين</th>
+                    <th scope="col" class="text-center">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="teachers-tbody">
+                  <!-- Skeleton Loading State -->
+                  <tr class="skeleton-row">
+                    <td class="col-sticky-name"><div class="skeleton-box lg"></div></td>
+                    <td><div class="skeleton-box md"></div></td>
+                    <td><div class="skeleton-box sm"></div></td>
+                    <td><div class="skeleton-box sm"></div></td>
+                    <td class="text-center"><div class="skeleton-box sm mx-auto"></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- -------------------------------------- -->
+        <!-- SCREEN 3: MESSAGES (الرسائل)          -->
+        <!-- -------------------------------------- -->
+        <section id="screen-messages" class="app-screen d-none">
+          <!-- Messages Filter & Controls Bar -->
+          <div class="controls-bar card border-0 shadow-sm p-2 p-sm-3 mb-3 sticky-controls">
+            <div class="row g-2">
+              <div class="col-12">
+                <div class="input-group">
+                  <span class="input-group-text bg-transparent border-end-0 text-muted px-2">
+                    <i class="bi bi-search"></i>
+                  </span>
+                  <input type="search" id="msg-search" class="form-control border-start-0 ps-0" placeholder="بحث بالاسم أو رقم الهاتف لاستخراج الرسائل...">
+                </div>
+              </div>
+              <div class="col-12 d-flex align-items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button type="button" id="btn-msg-filter" class="btn btn-pill btn-outline-primary d-flex align-items-center gap-1 flex-shrink-0">
+                  <i class="bi bi-funnel"></i>
+                  <span>تصفية لكل العواميد</span>
+                  <span id="msg-filter-count" class="badge rounded-pill bg-primary ms-1">0</span>
+                </button>
+
+                <button type="button" id="btn-msg-sort" class="btn btn-pill btn-outline-secondary d-flex align-items-center gap-1 flex-shrink-0">
+                  <i class="bi bi-arrow-down-up"></i>
+                  <span>الترتيب:</span>
+                  <span id="msg-sort-label" class="fw-semibold">المستوى</span>
+                </button>
+
+                <button type="button" id="btn-msg-clear" class="btn btn-pill btn-outline-danger d-flex align-items-center gap-1 flex-shrink-0" title="مسح التصفية والبحث">
+                  <i class="bi bi-x-circle"></i>
+                  <span>مسح التصفية</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card border-0 shadow-sm p-3 mb-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+              <div class="d-flex align-items-center gap-2 flex-grow-1">
+                <select id="tpl-select" class="form-select form-select-sm" aria-label="اختر القالب">
+                  <option value="default">القالب الافتراضي</option>
+                </select>
+                <button type="button" id="btn-save-tpl" class="btn btn-outline-secondary btn-sm flex-shrink-0" title="حفظ القالب">
+                  <i class="bi bi-floppy"></i>
+                </button>
+                <button type="button" id="btn-delete-tpl" class="btn btn-outline-danger btn-sm flex-shrink-0" title="حذف القالب المحدد">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <button type="button" id="btn-reset-tpl" class="btn btn-outline-secondary btn-sm flex-shrink-0" title="إعادة ضبط">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </div>
+              <span id="msg-count" class="badge bg-secondary-subtle text-secondary border px-2 py-1">المحددون: 0 طالب</span>
+            </div>
+
+            <!-- Variable Chips Toolbar -->
+            <label class="form-label small fw-semibold text-muted mb-1">إدراج متغيرات القالب:</label>
+            <div id="tpl-chips" class="d-flex gap-1 overflow-x-auto pb-2 mb-3 no-scrollbar">
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{الاسم}}">👤 الاسم</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{الهاتف}}">📱 الهاتف</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{المستوى}}">🎓 المستوى</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{المعلم}}">👨‍🏫 المعلم</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{الحالة_الجامعية}}">🎒 الجامعة</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{المعهد}}">🏛️ المعهد</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{السنة}}">📅 السنة</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{ملاحظات}}">📝 ملاحظات</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{إجمالي_الطلاب}}">📊 إجمالي الطلاب</button>
+              <button type="button" class="btn btn-chip btn-sm" data-chip="{{#معلم}}...{{/معلم}}">📌 كتلة معلم</button>
+            </div>
+
+            <!-- Template Editor Textarea -->
+            <div class="mb-3">
+              <label for="tpl-editor" class="form-label fw-semibold">نص القالب:</label>
+              <textarea id="tpl-editor" class="form-control font-monospace dir-auto" rows="4" dir="auto" placeholder="اكتب نص القالب هنا..."></textarea>
+            </div>
+
+            <!-- Generated Output Textarea -->
+            <div class="mb-3">
+              <label for="msg-output" class="form-label fw-semibold text-success d-flex align-items-center gap-1">
+                <i class="bi bi-stars"></i>
+                <span>النتيجة الحالية (معاينة النص):</span>
+              </label>
+              <textarea id="msg-output" class="form-control bg-body-tertiary font-monospace" rows="8" readonly dir="auto" placeholder="سيظهر النص المولد هنا بناءً على الطلاب المفلترين..."></textarea>
+            </div>
+
+            <!-- Pinned Copy Button -->
+            <button type="button" id="btn-copy" class="btn btn-success btn-lg w-100 fw-bold d-flex align-items-center justify-content-center gap-2 py-3 shadow-sm">
+              <i class="bi bi-clipboard-check-fill fs-5"></i>
+              <span>نسخ النص الكامل</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- -------------------------------------- -->
+        <!-- SCREEN 4: HISTORY & ARCHIVE (السجل)    -->
+        <!-- -------------------------------------- -->
+        <section id="screen-history" class="app-screen d-none">
+          <!-- View Segment Toggle -->
+          <div class="nav-segment mb-3 p-1 bg-body-secondary rounded-3 d-flex">
+            <button type="button" id="btn-tab-log" class="btn nav-segment-btn active flex-fill rounded-2 fw-semibold border-0">
+              <i class="bi bi-journal-text ms-1"></i> سجل العمليات
+            </button>
+            <button type="button" id="btn-tab-archive" class="btn nav-segment-btn flex-fill rounded-2 fw-semibold border-0">
+              <i class="bi bi-archive-fill ms-1"></i> الأرشيف (المحذوفات)
+            </button>
+          </div>
+
+          <!-- History Activity Log View -->
+          <div id="history-list" class="timeline-container">
+            <!-- Dynamic content injected by JS -->
+          </div>
+
+          <!-- Archive List View -->
+          <div id="archive-list" class="archive-container d-none">
+            <!-- Dynamic content injected by JS -->
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Fixed Bottom Tab Bar -->
+    <nav class="bottom-nav fixed-bottom border-top bg-body shadow-lg">
+      <div class="container-fluid max-w-xl d-flex align-items-center justify-content-around py-1">
+        <button type="button" class="nav-link active d-flex flex-column align-items-center py-1 px-2 border-0 bg-transparent" data-nav="students">
+          <i class="bi bi-people-fill nav-icon"></i>
+          <span class="nav-label">الطلاب</span>
+        </button>
+        <button type="button" class="nav-link d-flex flex-column align-items-center py-1 px-2 border-0 bg-transparent" data-nav="teachers">
+          <i class="bi bi-person-badge-fill nav-icon"></i>
+          <span class="nav-label">المعلمون</span>
+        </button>
+        <button type="button" class="nav-link d-flex flex-column align-items-center py-1 px-2 border-0 bg-transparent" data-nav="messages">
+          <i class="bi bi-chat-text-fill nav-icon"></i>
+          <span class="nav-label">الرسائل</span>
+        </button>
+        <button type="button" class="nav-link d-flex flex-column align-items-center py-1 px-2 border-0 bg-transparent" data-nav="history">
+          <i class="bi bi-clock-history nav-icon"></i>
+          <span class="nav-label">السجل</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- REUSABLE COMPONENTS                        -->
+  <!-- ========================================== -->
+
+  <!-- Generic Bottom Sheet -->
+  <div id="sheet-backdrop" class="sheet-backdrop d-none"></div>
+  <div id="sheet" class="bottom-sheet border-top shadow-lg d-none">
+    <div class="sheet-drag-handle mx-auto my-2"></div>
+    <div class="sheet-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+      <h3 id="sheet-title" class="h6 fw-bold mb-0">عنوان النافذة</h3>
+      <button type="button" id="btn-sheet-close" class="btn-close text-reset" aria-label="إغلاق"></button>
+    </div>
+    <div id="sheet-body" class="sheet-body p-3 overflow-y-auto">
+      <!-- Sheet Form / Content Injected Here -->
+    </div>
+    <div id="sheet-footer" class="sheet-footer p-3 border-top bg-body sticky-bottom d-none">
+      <!-- Sheet Action Buttons Injected Here -->
+    </div>
+  </div>
+
+  <!-- Generic Modal Confirmation Dialog -->
+  <div id="modal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 id="modal-title" class="modal-title fw-bold">تأكيد الإجراء</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div id="modal-body" class="modal-body py-3">
+          هل أنت تأكد من تنفيذ هذا الإجراء؟
+        </div>
+        <div id="modal-footer" class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-danger btn-confirm">تأكيد</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Host for Notifications & Undo -->
+  <div id="toast-host" class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index: 1090;">
+    <!-- Toasts injected dynamically -->
+  </div>
+
+  <!-- ========================================== -->
+  <!-- HTML TEMPLATES (<template>)                -->
+  <!-- ========================================== -->
+
+  <!-- 1. Student Registration & Edit Form Template -->
+  <template id="tpl-student-form">
+    <form class="student-form" novalidate>
+      <div class="form-alert alert alert-danger d-none mb-3" role="alert"></div>
+
+      <!-- Basic Info -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold">اسم الطالب <span class="text-danger">*</span></label>
+        <input type="text" name="name" class="form-control" placeholder="الاسم الثلاثي أو الرباعي..." required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">رقم الهاتف <span class="text-danger">*</span></label>
+        <input type="tel" name="phone" class="form-control text-start" dir="ltr" placeholder="01012345678" inputmode="tel" required>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold">المستوى <span class="text-danger">*</span></label>
+          <select name="level" class="form-select" required>
+            <option value="">اختر المستوى...</option>
+            <option value="معلم">معلم</option>
+            <option value="أ">أ</option>
+            <option value="أ/">أ/</option>
+            <option value="ب">ب</option>
+            <option value="ب/">ب/</option>
+            <option value="ج">ج</option>
+            <option value="ج/">ج/</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold">المعلم المتابع</label>
+          <select name="mentor" class="form-select">
+            <option value="">اختر المعلم (اختياري)...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Teacher Notice Hint -->
+      <div class="level-teacher-hint alert alert-info d-none d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="bi bi-info-circle-fill fs-5"></i>
+        <span class="small">سيتم تسجيل هذا الطالب تلقائياً في قائمة المعلمين، وسيصبح متاحاً كمتابع لطلاب آخرين.</span>
+      </div>
+
+      <!-- Group 1: University Data -->
+      <div class="card bg-body-tertiary border-0 p-3 mb-3">
+        <h6 class="fw-bold mb-2 text-primary d-flex align-items-center gap-1">
+          <i class="bi bi-mortarboard-fill"></i> بيانات الجامعة
+        </h6>
+        <div class="mb-1">
+          <label class="form-label small fw-semibold">الحالة الجامعية <span class="text-danger">*</span></label>
+          <div class="d-flex gap-2">
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="uni_status" id="uni-status-student" value="طالب" checked>
+              <span class="form-check-label">طالب</span>
+            </label>
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="uni_status" id="uni-status-grad" value="خريج">
+              <span class="form-check-label">خريج</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group 2: Institute Data -->
+      <div class="card bg-body-tertiary border-0 p-3 mb-3">
+        <h6 class="fw-bold mb-2 text-primary d-flex align-items-center gap-1">
+          <i class="bi bi-building"></i> بيانات المعهد
+        </h6>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">مسجل بالمعهد؟ <span class="text-danger">*</span></label>
+          <div class="d-flex gap-2">
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="enrolled" id="enrolled-yes" value="نعم">
+              <span class="form-check-label">نعم</span>
+            </label>
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="enrolled" id="enrolled-no" value="لا" checked>
+              <span class="form-check-label">لا</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="institute-year-group mt-3 d-none">
+          <label class="form-label small fw-semibold">تحديد المستوى / السنة بالمعهد <span class="text-danger">*</span></label>
+          <div class="d-flex flex-wrap gap-2">
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="year" id="year-prep" value="تمهيدي">
+              <span class="form-check-label">تمهيدي</span>
+            </label>
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="year" id="year-1" value="الأولى">
+              <span class="form-check-label">الأولى</span>
+            </label>
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="year" id="year-2" value="الثانية">
+              <span class="form-check-label">الثانية</span>
+            </label>
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="year" id="year-3" value="الثالثة">
+              <span class="form-check-label">الثالثة</span>
+            </label>
+            <label class="form-check-card flex-fill">
+              <input class="form-check-input" type="radio" name="year" id="year-4" value="الرابعة">
+              <span class="form-check-label">الرابعة</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold">ملاحظات إضافية</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="أي ملاحظات تخص الطالب..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold mt-2">حفظ البيانات</button>
+    </form>
+  </template>
+
+  <!-- 2. Teacher Form Template -->
+  <template id="tpl-teacher-form">
+    <form class="teacher-form" novalidate>
+      <div class="form-alert alert alert-danger d-none mb-3" role="alert"></div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">اسم المعلم <span class="text-danger">*</span></label>
+        <input type="text" name="name" class="form-control" placeholder="اسم المعلم..." required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">رقم الهاتف <span class="text-danger">*</span></label>
+        <input type="tel" name="phone" class="form-control text-start" dir="ltr" placeholder="01012345678" inputmode="tel" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">ملاحظات</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="ملاحظات اختيارية..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold mt-2">حفظ المعلم</button>
+    </form>
+  </template>
+
+  <!-- 3. Filter Row Template -->
+  <template id="tpl-filter-row">
+    <div class="filter-row card p-2 mb-2 bg-body-tertiary border-0">
+      <div class="row g-2 align-items-center">
+        <div class="col-5">
+          <select name="field" class="form-select form-select-sm">
+            <option value="name">الاسم</option>
+            <option value="phone">الهاتف</option>
+            <option value="level">المستوى</option>
+            <option value="mentor">المعلم</option>
+            <option value="uni_status">الحالة الجامعية</option>
+            <option value="enrolled">مسجل بالمعهد</option>
+            <option value="year">السنة</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <select name="op" class="form-select form-select-sm mb-1">
+            <option value="contains">يحتوي على</option>
+            <option value="equals">يساوي تماماً</option>
+            <option value="notEquals">لا يساوي</option>
+            <option value="startsWith">يبدأ بـ</option>
+            <option value="isEmpty">فارغ</option>
+            <option value="notEmpty">غير فارغ</option>
+          </select>
+          <div class="filter-value">
+            <input type="text" class="form-control form-control-sm" placeholder="القيمة...">
+          </div>
+        </div>
+        <div class="col-1 text-end">
+          <button type="button" class="btn btn-sm btn-outline-danger border-0 btn-remove p-1" title="حذف الشرط">
+            <i class="bi bi-trash-fill"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- 4. Column Row Template -->
+  <template id="tpl-column-row">
+    <div class="column-row d-flex align-items-center justify-content-between p-2 border-bottom">
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" type="checkbox" name="visible" id="col-switch-id">
+        <label class="form-check-label fw-semibold col-label" for="col-switch-id">اسم العمود</label>
+      </div>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary btn-up" title="للأعلى"><i class="bi bi-chevron-up"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-down" title="للأسفل"><i class="bi bi-chevron-down"></i></button>
+      </div>
+    </div>
+  </template>
+
+  <!-- 5. Sort Row Template -->
+  <template id="tpl-sort-row">
+    <div class="sort-row d-flex align-items-center gap-2 p-2 mb-2 bg-body-tertiary rounded">
+      <select name="field" class="form-select form-select-sm flex-fill">
+        <option value="level">المستوى</option>
+        <option value="name">الاسم</option>
+        <option value="mentor">المعلم المتابع</option>
+        <option value="uni_status">الحالة الجامعية</option>
+        <option value="year">السنة بالمعهد</option>
+      </select>
+      <button type="button" class="btn btn-outline-primary btn-sm btn-dir fw-semibold" data-dir="asc">
+        تصاعدي <i class="bi bi-sort-down"></i>
+      </button>
+    </div>
+  </template>
+
+  <!-- 6. Activity Log / History Item Template -->
+  <template id="tpl-log-item">
+    <div class="timeline-item card border-0 shadow-sm p-3 mb-2">
+      <div class="d-flex align-items-start justify-content-between gap-2">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-secondary-subtle text-secondary font-monospace log-time">14:22</span>
+            <span class="fw-bold log-title">تعديل طالب</span>
+            <span class="log-badge"></span>
+          </div>
+          <p class="text-muted small mb-0 log-desc">وصف العملية بالتفصيل يظهر هنا...</p>
+        </div>
+        <button type="button" class="btn btn-outline-warning btn-sm btn-undo flex-shrink-0 fw-bold d-flex align-items-center gap-1">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          <span>تراجع</span>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <!-- 7. Import Preview Row Template -->
+  <template id="tpl-import-row">
+    <tr class="import-row">
+      <td class="import-status text-center">
+        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+      </td>
+      <td class="import-name">أحمد محمود</td>
+      <td class="import-phone">01012345678</td>
+      <td class="import-level">أ</td>
+      <td class="import-mentor">حسام عادل</td>
+      <td class="import-reason text-danger small">سبب الرفض إن وجد</td>
+    </tr>
+  </template>
+
+  <!-- 8. Generic Empty State Template -->
+  <template id="tpl-empty">
+    <div class="empty-state text-center py-5 px-3">
+      <div class="empty-icon text-muted display-4 mb-3">
+        <i class="bi bi-inbox-fill"></i>
+      </div>
+      <h4 class="empty-title h5 fw-bold mb-2">لا توجد بيانات</h4>
+      <p class="empty-text text-muted small mb-4">لم يتم العثور على أي عناصر مطابقة حالياً.</p>
+      <button type="button" class="empty-action btn btn-primary btn-sm rounded-pill px-4 py-2">
+        إضافة عنصر جديد
+      </button>
+    </div>
+  </template>
+
+  <!-- Logic Entrypoint (Written separately) -->
+  <script type="module" src="js/app.js"></script>
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
