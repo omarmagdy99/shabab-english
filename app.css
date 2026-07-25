@@ -588,10 +588,15 @@ button,
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: var(--shadow-xl);
+  overflow: hidden;
 }
 
 .bottom-sheet.show {
   transform: translateY(0);
+}
+
+.sheet-header {
+  flex-shrink: 0;
 }
 
 .sheet-drag-handle {
@@ -599,14 +604,24 @@ button,
   height: 5px;
   border-radius: 3px;
   background-color: var(--bs-secondary-border-subtle);
+  flex-shrink: 0;
 }
 
 .sheet-body {
-  max-height: calc(88vh - 110px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 8rem !important;
+  padding-bottom: 1.5rem !important;
   scroll-behavior: smooth;
+}
+
+.sheet-footer {
+  flex-shrink: 0;
+  position: relative !important;
+  z-index: 20;
+  background-color: var(--bs-body-bg) !important;
+  border-top: 1px solid var(--bs-border-color) !important;
 }
 
 .sheet-body select,
