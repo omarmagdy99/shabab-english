@@ -453,6 +453,12 @@ button,
   font-weight: 700;
 }
 
+/* عندما يكون العمود هو الأول في الجدول (مثل جدول المعلمين) */
+.rtl-sticky-table th.col-sticky-name:first-child,
+.rtl-sticky-table td.col-sticky-name:first-child {
+  right: 0 !important;
+}
+
 .rtl-sticky-table thead th.col-sticky-check,
 .rtl-sticky-table thead th.col-sticky-name {
   z-index: 12;
@@ -713,5 +719,31 @@ button,
 
   .fab-btn {
     left: 40px;
+  }
+}
+
+/* Mobile Screen Adjustments (< 576px) */
+@media (max-width: 576px) {
+  .rtl-sticky-table th,
+  .rtl-sticky-table td {
+    padding: 0.6rem 0.5rem !important;
+    font-size: 0.825rem !important;
+    white-space: nowrap;
+  }
+
+  .rtl-sticky-table .badge {
+    font-size: 0.725rem !important;
+    padding: 0.3em 0.6em !important;
+  }
+
+  .rtl-sticky-table .btn-sm {
+    padding: 0.25rem 0.45rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .custom-table-wrapper {
+    max-height: calc(100vh - 210px);
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--border-radius-sm);
   }
 }

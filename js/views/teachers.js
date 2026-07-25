@@ -10,6 +10,15 @@ import { undoToast } from './students.js';
 
 let onAfterMutate = () => {};
 let goToStudents = () => {};
+let currentSort = { field: 'name', dir: 'asc' };
+
+const TEACHER_COLUMNS = [
+  { key: 'name',    label: 'الاسم',          sortable: true },
+  { key: 'phone',   label: 'رقم الهاتف',     sortable: true },
+  { key: 'source',  label: 'المصدر',         sortable: true },
+  { key: 'mentees', label: 'عدد المتابعين', sortable: true },
+  { key: 'actions', label: 'إجراءات',       sortable: false },
+];
 
 export function initTeachers({ afterMutate, navigate }) {
   onAfterMutate = afterMutate;
@@ -18,12 +27,61 @@ export function initTeachers({ afterMutate, navigate }) {
 }
 
 export function render() {
-  const rows = teachersWithCounts().sort((a, b) => compareText(a.name, b.name));
-  $('#teachers-count').textContent = `${rows.length} معلم`;
+  const allRows = teachersWithCounts();
+  const rows = allRows.sort((a, b) => {
+    const dir = currentSort.dir === 'asc' ? 1 : -1;
+    if (currentSort.field === 'name') return compareText(a.name, b.name) * dir;
+    if (currentSort.field === 'phone') return compareText(a.phone || '', b.phone || '') * dir;
+    if (currentSort.field === 'source') return compareText(a.source || '', b.source || '') * dir;
+    if (currentSort.field === 'mentees') return ((a.mentees || 0) - (b.mentees || 0)) * dir;
+    return 0;
+  });
+
+  $('#teachers-count').textContent = `عرض ${rows.length} معلم`;
 
   const head = el('tr');
-  ['الاسم', 'رقم الهاتف', 'المصدر', 'عدد المتابعين', 'إجراءات'].forEach((h, i) =>
-    head.append(el('th', i === 0 ? 'col-sticky-name' : (i === 4 ? 'text-center' : ''), h)));
+  TEACHER_COLUMNS.forEach((col, i) => {
+    const isFirst = i === 0;
+    const isActions = col.key === 'actions';
+    const th = el('th', `${isFirst ? 'col-sticky-name' : ''} ${isActions ? 'text-center' : ''}`);
+
+    if (col.sortable) {
+      th.style.cursor = 'pointer';
+      th.title = 'اضغط للترتيب بهذا العمود';
+      const active = currentSort.field === col.key;
+
+      const titleSpan = el('span', 'me-1', col.label);
+      let iconClass = 'bi bi-arrow-down-up opacity-25 ms-1 small';
+      if (active) {
+        if (col.key === 'mentees') {
+          iconClass = currentSort.dir === 'asc'
+            ? 'bi bi-sort-numeric-down text-primary fw-bold ms-1'
+            : 'bi bi-sort-numeric-up-alt text-primary fw-bold ms-1';
+        } else {
+          iconClass = currentSort.dir === 'asc'
+            ? 'bi bi-sort-alpha-down text-primary fw-bold ms-1'
+            : 'bi bi-sort-alpha-up-alt text-primary fw-bold ms-1';
+        }
+      }
+
+      const icon = el('i', iconClass);
+      th.append(titleSpan, icon);
+
+      th.addEventListener('click', () => {
+        if (currentSort.field === col.key) {
+          currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.field = col.key;
+          currentSort.dir = 'asc';
+        }
+        render();
+      });
+    } else {
+      th.textContent = col.label;
+    }
+
+    head.append(th);
+  });
   $('#teachers-thead').replaceChildren(head);
 
   const tbody = $('#teachers-tbody');
